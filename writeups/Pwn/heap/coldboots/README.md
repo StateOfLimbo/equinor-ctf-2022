@@ -266,7 +266,7 @@ Now chunk 1 `0x2c0` points to the address we wrote..
 
 When we allocate a new chunk of size < 0x20, the tcache will give us the chunk at the top (`0x2c0`), and put the next chunk `0x57a7e0f113b0` as first chunk. The following allocation would then return `0x57a7e0f113b0`, enabling us to read or write to/from this area.
 
-Let's try this with an actual address. We have leaked libc, so let's try to read `environ`. This is symbol in libc it's good to know about as it contains a pointer to the environment variables that are placed at the end of the stack area. Thiis enables us to attack the stack next.
+Let's try this with an actual address. We have leaked libc, so let's try to read `environ`. This is symbol in libc it's good to know about as it contains a pointer to the environment variables that are placed at the end of the stack area. This enables us to attack the stack next.
 
 ```python
 Write(1, p64((libc.sym.environ)^value_0)) 
@@ -393,5 +393,12 @@ drwxr-xr-x 1 root root    17 Oct 22 15:59 ..
 $ cat /opt/flag
 EPT{n0_h00ks_f0r_y0u}$  
 ```
+
+### No hooks?
+
+The flag hints at a technique used in earlier versions of glibc, where you could add a function pointer to `__free_hook` or `__malloc_hook` in a writable segment of libc memory. The function would then be called every time you did another malloc or free, with the allocated or freed chunk pointer as an argument. Aligning the planets wasn't hard to get `b'/bin/sh\0'` into the chunk and `libc.sym.system` into the hook to pop a shell!
+
+Luckily we knew that this wasn't available in libc-2.35, so we did not go down that rabbity hole only to be disappointed by the hook not triggering.. :phew:
+
 
 
